@@ -15,3 +15,4 @@ Rename file config.yaml_template to config.yaml. Config fields:
 - analyze_blocks - how many blocks analyze for average gas price 
 - sleep_seconds - how long sleep before checking if new block appeared
 - server.host - address to listen for server API
+- debug - set log level to debug. If true will be printed results for each block

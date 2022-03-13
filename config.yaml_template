@@ -8,3 +8,4 @@ analyze_blocks: 10
 sleep_seconds: 2
 server:
   host: 0.0.0.0:8181
+debug: true

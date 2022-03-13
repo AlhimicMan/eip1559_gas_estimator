@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ybbus/jsonrpc/v2"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -78,10 +77,6 @@ func (e *ETHFeeEstimator) getBaseFeeValue(ctx context.Context) (int64, error) {
 		return 0, fmt.Errorf("error getting last block data: %w", err)
 	}
 	lastBlockBaseFeeWei := lastBlockRec.BaseFee().Int64()
-	gasUsed := lastBlockRec.GasUsed()
-	gasLimit := lastBlockRec.GasLimit()
-	usedRatio := float64(gasUsed) / float64(gasLimit)
-	fmt.Printf("gas used: %d and limit %d, ratio: %f\n", gasUsed, gasLimit, usedRatio)
 	return lastBlockBaseFeeWei, nil
 }
 
@@ -151,12 +146,6 @@ func (e *ETHFeeEstimator) getHistoryBlocks(blocksCount int) ([]HistoryBlockFees,
 	if err != nil {
 		return nil, fmt.Errorf("error making call: %w", err)
 	}
-	blockNumHex := rewards.OldestBlock[2:len(rewards.OldestBlock)]
-	blockNum, err := strconv.ParseInt(blockNumHex, 16, 64)
-	if err != nil {
-		fmt.Printf("error converting block hex number %s to int64\n", blockNumHex)
-	}
-	fmt.Printf("Oldest block is %d\n", blockNum)
 	blocksRewards := make([]HistoryBlockFees, 0, blocksCount)
 	var i int64
 	for i = 0; i < int64(blocksCount); i++ {
@@ -182,7 +171,7 @@ func (e *ETHFeeEstimator) getHistoryBlocks(blocksCount int) ([]HistoryBlockFees,
 func (e *ETHFeeEstimator) printHistoricalFeesAverage(averagesStat *HistoricalFeesAverages) {
 	for _, percent := range e.rewardsPercentiles {
 		average := averagesStat.AverageFees[percent]
-		fmt.Printf("\tfor %d average value is %f\n", percent, WeiToGwe(average))
+		fmt.Printf("for %d average value is %f\n", percent, WeiToGwe(average))
 	}
 }
 
@@ -205,7 +194,6 @@ func (e *ETHFeeEstimator) RunEstimatesProcessor(ctx context.Context) {
 			continue
 		}
 		e.lastProcessedBlock = nodeLastBlock
-		fmt.Printf("\nLast block is %d\n", nodeLastBlock)
 
 		blockStat, err := e.calculateBasicFees(ctx)
 		if err != nil {
@@ -224,8 +212,11 @@ func (e *ETHFeeEstimator) RunEstimatesProcessor(ctx context.Context) {
 			fmt.Printf("error calculating average fees for percentiles: %v", err)
 			continue
 		}
-		e.printBasicFeesLog(blockStat)
-		e.printHistoricalFeesAverage(averageFees)
+		if config.GetDebugEnabled() {
+			fmt.Printf("\nLast block is %d\n", nodeLastBlock)
+			e.printBasicFeesLog(blockStat)
+			e.printHistoricalFeesAverage(averageFees)
+		}
 		priceLevels := make([]GasPriceForSpeed, 0, len(e.requiredLevels))
 		for levelName, levelPercentile := range e.requiredLevels {
 			feeForLevel := averageFees.AverageFees[levelPercentile]

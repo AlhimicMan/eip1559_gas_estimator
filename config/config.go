@@ -49,3 +49,8 @@ func GetPercentilesToLevel() (map[string]int, error) {
 	}
 	return resultLevels, nil
 }
+
+func GetDebugEnabled() bool {
+	debugEnabled := viper.GetBool("debug")
+	return debugEnabled
+}
