@@ -1,0 +1,10 @@
+node: <ETH NODE ADDRESS>
+levels:
+  safe_low: 5
+  average: 10
+  fast: 55
+  fastest: 85
+analyze_blocks: 10
+sleep_seconds: 2
+server:
+  host: 0.0.0.0:8181
