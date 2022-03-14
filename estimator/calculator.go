@@ -138,7 +138,7 @@ func (e *ETHFeeEstimator) convertRewardsPercentiles(rewards []string) (map[int]i
 	return results, nil
 }
 
-func (e *ETHFeeEstimator) getHistoryBlocks(blocksCount int) ([]HistoryBlockFees, error) {
+func (e *ETHFeeEstimator) getBlocksHistoryFromNode(blocksCount int) (*HistoryRewards, error) {
 	callParams := []interface{}{blocksCount, "latest", e.rewardsPercentiles}
 	rewards := &HistoryRewards{}
 	rpcClient := jsonrpc.NewClient(e.endpoint)
@@ -146,6 +146,11 @@ func (e *ETHFeeEstimator) getHistoryBlocks(blocksCount int) ([]HistoryBlockFees,
 	if err != nil {
 		return nil, fmt.Errorf("error making call: %w", err)
 	}
+	return rewards, nil
+}
+
+func (e *ETHFeeEstimator) getHistoryBlocks(rewards *HistoryRewards) ([]HistoryBlockFees, error) {
+	blocksCount := len(rewards.Reward)
 	blocksRewards := make([]HistoryBlockFees, 0, blocksCount)
 	var i int64
 	for i = 0; i < int64(blocksCount); i++ {
@@ -201,7 +206,13 @@ func (e *ETHFeeEstimator) RunEstimatesProcessor(ctx context.Context) {
 			continue
 		}
 
-		historyItems, err := e.getHistoryBlocks(e.blockCountForAverage)
+		rewards, err := e.getBlocksHistoryFromNode(e.blockCountForAverage)
+		if err != nil {
+			fmt.Printf("error getting blocks history: %v", err)
+			continue
+		}
+
+		historyItems, err := e.getHistoryBlocks(rewards)
 		if err != nil {
 			fmt.Printf("error getting history items: %v", err)
 			continue
